@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 const transactionsSimulees = [
   { montant: 450, categorie: 'alimentation', description: 'Courses' },
@@ -16,24 +18,48 @@ export default function Home() {
   const [score, setScore] = useState<number | null>(null)
   const [insights, setInsights] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
-    fetch('/api/score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transactions: transactionsSimulees })
-    })
-      .then(res => res.json())
-      .then(data => {
-        setScore(data.score)
-        setInsights(data.insights)
-        setLoading(false)
+    const init = async () => {
+      // Vérifie si l'user est connecté
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        router.push('/auth')
+        return
+      }
+
+      // Vérifie si l'onboarding est fait
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('objectif')
+        .eq('id', session.user.id)
+        .single()
+
+      if (!profile?.objectif) {
+        router.push('/onboarding')
+        return
+      }
+
+      // Calcule le score
+      const res = await fetch('/api/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactions: transactionsSimulees })
       })
+      const data = await res.json()
+      setScore(data.score)
+      setInsights(data.insights)
+      setLoading(false)
+    }
+
+    init()
   }, [])
 
   if (loading) return (
     <main className="min-h-screen bg-black text-white flex items-center justify-center">
-      <p className="text-gray-400">Calcul de ton score...</p>
+      <p className="text-gray-400">Chargement...</p>
     </main>
   )
 

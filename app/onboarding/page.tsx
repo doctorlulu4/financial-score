@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 const steps = [
   {
@@ -23,16 +24,25 @@ export default function Onboarding() {
   const [answers, setAnswers] = useState<string[]>([])
   const router = useRouter()
 
-  const handleChoice = (option: string) => {
-    const newAnswers = [...answers, option]
-    setAnswers(newAnswers)
+  const handleChoice = async (option: string) => {
+  const newAnswers = [...answers, option]
+  setAnswers(newAnswers)
 
-    if (step < steps.length - 1) {
-      setStep(step + 1)
-    } else {
-      router.push('/')
+  if (step < steps.length - 1) {
+    setStep(step + 1)
+  } else {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session) {
+      await supabase.from('profiles').upsert({
+        id: session.user.id,
+        objectif: newAnswers[0],
+        priorite: newAnswers[1],
+        profil: newAnswers[2]
+      })
     }
+    router.push('/')
   }
+}
 
   const current = steps[step]
   const progress = ((step) / steps.length) * 100

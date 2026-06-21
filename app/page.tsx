@@ -37,6 +37,31 @@ export default function Home() {
         return
       }
 
+      // Vérifier si bank=connected dans l'URL
+      const urlParams = new URLSearchParams(window.location.search)
+      const bankJustConnected = urlParams.get('bank') === 'connected'
+
+      if (bankJustConnected) {
+        await fetch('/api/profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: session.user.id,
+            objectif: profile.objectif,
+            priorite: profile.priorite,
+            profil: profile.profil,
+            bank_connected: true
+          })
+        })
+        // Nettoyer l'URL
+        window.history.replaceState({}, '', '/')
+      }
+
+      if (!profile?.bank_connected && !bankJustConnected) {
+        router.push('/bank')
+        return
+      }
+
       const scoreRes = await fetch('/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

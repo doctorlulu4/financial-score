@@ -7,11 +7,11 @@ export async function POST(request: Request) {
     process.env.SUPABASE_SERVICE_KEY!
   )
 
-  const { id, objectif, priorite, profil } = await request.json()
-  
+  const { id, objectif, priorite, profil, bank_connected } = await request.json()
+
   const { error } = await supabaseAdmin
-    .from('profiles')
-    .upsert({ id, objectif, priorite, profil })
+  .from('profiles')
+  .upsert({ id, objectif, priorite, profil, bank_connected })
 
   if (error) {
     console.log('error:', error)
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('objectif')
+    .select('objectif, priorite, profil, bank_connected')
     .eq('id', id!)
     .single()
 

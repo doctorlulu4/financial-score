@@ -33,11 +33,15 @@ export default function Onboarding() {
   } else {
     const { data: { session } } = await supabase.auth.getSession()
     if (session) {
-      await supabase.from('profiles').upsert({
-        id: session.user.id,
-        objectif: newAnswers[0],
-        priorite: newAnswers[1],
-        profil: newAnswers[2]
+      await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: session.user.id,
+          objectif: newAnswers[0],
+          priorite: newAnswers[1],
+          profil: newAnswers[2]
+        })
       })
     }
     router.push('/')

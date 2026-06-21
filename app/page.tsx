@@ -22,7 +22,6 @@ export default function Home() {
 
   useEffect(() => {
     const init = async () => {
-      // Vérifie si l'user est connecté
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session) {
@@ -30,25 +29,20 @@ export default function Home() {
         return
       }
 
-      // Vérifie si l'onboarding est fait
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('objectif')
-        .eq('id', session.user.id)
-        .single()
+      const res = await fetch(`/api/profile?id=${session.user.id}`)
+      const profile = await res.json()
 
       if (!profile?.objectif) {
         router.push('/onboarding')
         return
       }
 
-      // Calcule le score
-      const res = await fetch('/api/score', {
+      const scoreRes = await fetch('/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transactions: transactionsSimulees })
       })
-      const data = await res.json()
+      const data = await scoreRes.json()
       setScore(data.score)
       setInsights(data.insights)
       setLoading(false)
@@ -59,7 +53,7 @@ export default function Home() {
 
   if (loading) return (
     <main className="min-h-screen bg-black text-white flex items-center justify-center">
-      <p className="text-gray-400">Chargement...</p>
+      <p className="text-gray-400">Calcul de ton score...</p>
     </main>
   )
 

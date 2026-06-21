@@ -91,6 +91,16 @@ export default function Home() {
         ))}
       </div>
 
+      <button
+        onClick={async () => {
+          await supabase.auth.signOut()
+          router.push('/auth')
+        }}
+        className="mt-8 text-gray-600 text-sm hover:text-gray-400"
+      >
+        Se déconnecter
+      </button>
+
     </main>
   )
 }

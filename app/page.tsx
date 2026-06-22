@@ -4,16 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-const transactionsSimulees = [
-  { montant: 450, categorie: 'alimentation', description: 'Courses' },
-  { montant: 800, categorie: 'logement', description: 'Loyer' },
-  { montant: 120, categorie: 'transport', description: 'Essence' },
-  { montant: 200, categorie: 'loisirs', description: 'Restaurants' },
-  { montant: 50, categorie: 'loisirs', description: 'Cinema' },
-  { montant: 80, categorie: 'abonnements', description: 'Netflix, Spotify' },
-  { montant: 30, categorie: 'divers', description: 'Divers' },
-]
-
 export default function Home() {
   const [score, setScore] = useState<number | null>(null)
   const [insights, setInsights] = useState<string[]>([])
@@ -37,11 +27,11 @@ export default function Home() {
         return
       }
 
-      // Vérifier si bank=connected dans l'URL
       const urlParams = new URLSearchParams(window.location.search)
       const bankJustConnected = urlParams.get('bank') === 'connected'
 
       if (bankJustConnected) {
+        // Sauvegarder bank_connected
         await fetch('/api/profile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -53,7 +43,12 @@ export default function Home() {
             bank_connected: true
           })
         })
-        // Nettoyer l'URL
+        // Récupérer les vraies transactions
+        await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: session.user.id })
+        })
         window.history.replaceState({}, '', '/')
       }
 
@@ -62,10 +57,16 @@ export default function Home() {
         return
       }
 
+      // Récupérer les transactions depuis Supabase
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', session.user.id)
+
       const scoreRes = await fetch('/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions: transactionsSimulees })
+        body: JSON.stringify({ transactions: transactions || [] })
       })
       const data = await scoreRes.json()
       setScore(data.score)
